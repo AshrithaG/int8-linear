@@ -8,6 +8,14 @@ SHAPES = {
         ("gate_proj, up_proj", 2048, 6144),
         ("down_proj", 6144, 2048),
     ],
+    # What vLLM actually runs for Qwen3-1.7B. It merges q, k and v into one
+    # projection and gate with up, so two of these differ from the view above.
+    "qwen3-1.7b-vllm": [
+        ("qkv_proj", 2048, 4096),
+        ("o_proj", 2048, 2048),
+        ("gate_up_proj", 2048, 12288),
+        ("down_proj", 6144, 2048),
+    ],
     # The TP1 shapes vLLM's own benchmarks/kernels/weight_shapes.py lists for
     # Llama-3-8B, with QKV and gate/up merged the way vLLM runs them.
     "llama-3-8b": [

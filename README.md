@@ -1,16 +1,40 @@
 # int8-linear
 
 W8A8 int8 linear layers for LLM inference on a consumer GPU: a Triton kernel,
-tuned and measured against vLLM's CUTLASS and Triton kernels and bf16 cuBLAS.
+measured against vLLM's CUTLASS and Triton kernels, the tuned Triton tables proposed
+in vLLM #45126, and bf16 cuBLAS, first one layer at a time and then end to end in vLLM.
 
-**Status: measured on an RTX 4090, cross-checked against vLLM's own benchmark, and
-confirmed on a second run. Kernel-level only so far; end-to-end decode throughput is next.**
+**Status: measured on one RTX 4090 (vLLM 0.28.0, Triton 3.7.1, torch 2.13.0+cu130).**
+Per layer on Qwen3-1.7B and Llama-3-8B shapes, cross-checked against vLLM's own
+benchmark and repeated; Qwen3-1.7B served end to end in vLLM, twice, with WikiText-2
+perplexity; a sweep of CUTLASS's dispatch buckets; host launch cost per call.
+
+## Results in brief
+
+- **End to end it is faster than vLLM's default int8 kernel, by less than per layer.**
+  Serving a W8A8 Qwen3-1.7B in vLLM with CUDA graphs, decode runs at 1.06x CUTLASS's
+  tokens per second at batch 1 to 16, 1.14x to 1.15x at 32 to 64, and 1.10x at 128.
+  Prefill runs at 1.29x. Per layer, at the batch sizes vLLM decodes at, the median is 1.42x.
+- **Against #45126's tables the end-to-end lead is small.** Decode is 1.02x to 1.03x at
+  batch 1 to 16 and level (0.99x to 1.01x) from 32 to 128, although per layer this kernel
+  is a median 1.28x faster at those batch sizes. Prefill is 1.27x.
+- **No measurable accuracy cost.** WikiText-2 perplexity is 20.44 for bf16, 20.49 with
+  CUTLASS and 20.52 with the Triton kernels, and neither int8 result is distinguishable
+  from bf16 on this sample. vLLM's Triton kernel, #45126's and this one produced identical
+  logprobs at all 20,440 tokens, in both runs.
+- **CUTLASS's slowdown starts at M=17, at a dispatch bucket edge.** Its time steps up
+  1.31x to 1.99x from M=16 to M=17 on five of six layer shapes, where vLLM's source
+  switches CUTLASS configuration. The sixth, which gets a different configuration in
+  that bucket, steps 1.06x. Both were predicted before the sweep ran.
+- **Where it loses.** Without CUDA graphs, decode is 0.85x CUTLASS and 0.73x to 0.77x
+  bf16. And configurations chosen from isolated per-layer timings made the model slower
+  at two batch sizes, so per-layer tuning does not reliably carry into the served model.
 
 ## The question
 
 On an RTX 4090, where does W8A8 int8 actually beat bf16 for the linear layers of
-a small LLM, and can a Triton kernel match vLLM's CUTLASS kernel at the shapes
-decode and prefill really use?
+a small LLM, can a Triton kernel beat vLLM's CUTLASS kernel at the shapes decode and
+prefill really use, and does a per-layer win survive in a served model?
 
 ## Where this comes from
 
@@ -50,9 +74,9 @@ regime for tiling, for memory traffic and for the epilogue.
   tensor-descriptor loads, on by default only on XPU and opt-in on CUDA through
   `VLLM_TRITON_USE_TD`.
 
-What is left open, and what this repo measures, is the comparison those threads
-skip: vLLM's default int8 kernel on a consumer Ada GPU against a fused Triton
-kernel and bf16, with every provider checked against a float64 reference first.
+What those threads skip, and this repo measures, is vLLM's default int8 kernel on a
+consumer Ada GPU against a fused Triton kernel, #45126's tables and bf16: per layer,
+with every output checked against a float64 reference, and then in a served model.
 
 ## What is measured
 
@@ -61,15 +85,23 @@ kernel and bf16, with every provider checked against a float64 reference first.
 | bf16 F.linear | cuBLAS, the unquantized baseline |
 | int8 CUTLASS (vLLM) | `cutlass_scaled_mm`, vLLM's W8A8 path on NVIDIA |
 | int8 Triton (vLLM) | `triton_scaled_mm`, vLLM's fallback and its ROCm path |
+| int8 Triton (#45126 tables) | vLLM's Triton kernel with the NVIDIA tables proposed in #45126, vendored in [`int8_linear/pr45126.py`](int8_linear/pr45126.py) |
 | int8 torch._int_mm, unfused | the cuBLASLt product, then scales and bias as separate kernels |
 | int8 Triton (this repo) | [`int8_linear/kernel.py`](int8_linear/kernel.py), default and tuned |
 
-CUTLASS and this repo's kernel are also timed with vLLM's per-token
+**Per layer** ([`bench/bench_linear.py`](bench/bench_linear.py)): Qwen3-1.7B's four
+distinct linear layers (2048 to 2048, 2048 to 1024, 2048 to 6144, 6144 to 2048); the
+four vLLM actually runs for it after merging q, k and v and gate and up (2048 to 4096,
+2048 to 2048, 2048 to 12288, 6144 to 2048); and the merged Llama-3-8B layers from vLLM's
+own kernel benchmark. M is 1, 4, 16, 64, 256, 1024 and 4096 tokens, and for vLLM's
+Qwen3-1.7B layers also the 51 batch sizes vLLM captures CUDA graphs at plus 1024, 2048
+and 4096. CUTLASS and this repo's kernel are also timed with vLLM's per-token
 `scaled_int8_quant` inside the measurement, since a real layer pays for both.
 
-Shapes are Qwen3-1.7B's four distinct linear layers (2048 to 2048, 2048 to 1024,
-2048 to 6144, 6144 to 2048) and, for comparison with vLLM's own benchmark,
-Llama-3-8B's. M runs 1, 4, 16, 64, 256, 1024 and 4096 tokens.
+**End to end** ([`bench/e2e_vllm.py`](bench/e2e_vllm.py)): Qwen3-1.7B served by vLLM from
+one W8A8 checkpoint, with only the int8 matmul changing between backends, plus the
+unquantized model. Decode and prefill tokens per second, with torch.compile and CUDA
+graphs and without, WikiText-2 perplexity, and per-token logprobs to compare backends.
 
 ## Method
 
@@ -87,6 +119,23 @@ The rules from the nanoinfer study:
 - Other GPU processes are recorded before and after, and timings are written to
   disk after every shape.
 
+End to end:
+
+- One checkpoint for every int8 backend:
+  [nytopop/Qwen3-1.7B.w8a8](https://huggingface.co/nytopop/Qwen3-1.7B.w8a8) at a pinned
+  revision, SmoothQuant then GPTQ, with int8 per-channel weights and dynamic per-token
+  int8 activations. Its config and recipe were checked, not assumed.
+- Each backend runs in its own process, with prefix caching off and vLLM's compile
+  cache disabled. CUTLASS and vLLM's Triton kernel are selected with `--linear-backend`;
+  #45126's kernel and this one replace the function vLLM's Triton path calls. Each run
+  records which kernel class its 112 linear layers use and how many calls reached the
+  patched kernel.
+- Decode generates 128 tokens from a 64-token prompt, with the first-token step timed
+  separately and subtracted; the median of five repeats is reported. Repeats varied by
+  at most 0.3% with CUDA graphs and 1.3% without.
+- Perplexity uses 40 windows of 512 tokens from the WikiText-2 test set. Differences
+  between backends are paired token by token.
+
 ## The kernel
 
 - int8 times int8 accumulated in int32 with `tl.dot`, so the product is exact.
@@ -99,13 +148,181 @@ The rules from the nanoinfer study:
 - Tile shape, warps, stages and tile order are tunable per GPU, shape and batch
   bucket. `bench/bench_linear.py --tune` writes them to
   `int8_linear/tuned_configs.json`, which the kernel reads.
+- After the first call for a given specialization, launches skip Triton's JIT dispatch
+  and relaunch the kernel that dispatch returned, keyed on everything Triton 3.7
+  specializes on. `tests/` check that the kept kernel is the one Triton picks.
+- [`int8_linear/vllm_patch.py`](int8_linear/vllm_patch.py) puts the kernel into vLLM.
+  Under torch.compile it sits behind a custom op, so its configuration comes from each
+  call's batch size rather than the one seen while tracing. Run eagerly, vLLM calls it
+  directly, because the custom op's dispatch cost more than the launch itself.
 
 vLLM's `triton_scaled_mm` differs in ways this is set up to test. It picks tile
 shapes from M alone, from 64x64x256 for small batches to 128x128x128 for large
 ones, never tunes warps or stages, and masks every axis unless its
 tensor-descriptor loads are in use, which `VLLM_TRITON_USE_TD` controls.
 
-## Results
+## End to end in vLLM
+
+Qwen3-1.7B W8A8 on the RTX 4090, tokens per second, from the second end-to-end run
+([`results/e2e.md`](results/e2e.md)). No other process was on the GPU.
+
+### With torch.compile and CUDA graphs (vLLM's default)
+
+| batch | bf16 | CUTLASS | vLLM Triton | #45126 | this repo | this repo / CUTLASS | this repo / #45126 | this repo / bf16 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 227 | 308 | 219 | 315 | 325 | 1.06x | 1.03x | 1.43x |
+| 4 | 809 | 1,184 | 854 | 1,216 | 1,252 | 1.06x | 1.03x | 1.55x |
+| 16 | 3,093 | 4,412 | 3,268 | 4,558 | 4,671 | 1.06x | 1.02x | 1.51x |
+| 32 | 5,993 | 7,603 | 6,257 | 8,564 | 8,664 | 1.14x | 1.01x | 1.45x |
+| 48 | 8,347 | 10,289 | 8,792 | 11,868 | 11,877 | 1.15x | 1.00x | 1.42x |
+| 64 | 10,537 | 12,819 | 11,080 | 14,638 | 14,655 | 1.14x | 1.00x | 1.39x |
+| 128 | 16,960 | 19,035 | 18,191 | 21,080 | 20,971 | 1.10x | 0.99x | 1.24x |
+| prefill, 8 x 512 | 47,490 | 79,218 | 94,941 | 80,013 | 101,919 | 1.29x | 1.27x | 2.15x |
+
+- W8A8 pays off here: bf16 decodes at 0.68x to 0.89x of CUTLASS.
+- vLLM's Triton kernel as shipped decodes at 0.71x to 0.96x of CUTLASS, but prefills
+  at 1.20x.
+- This kernel's lead over CUTLASS jumps from 1.06x at batch 16 to 1.14x at batch 32,
+  where CUTLASS's slow dispatch buckets begin ([below](#what-causes-the-cutlass-slowdown)).
+
+### Without torch.compile or CUDA graphs
+
+| batch | bf16 | CUTLASS | this repo | this repo / CUTLASS | this repo / bf16 |
+|---|---|---|---|---|---|
+| 1 | 70.6 | 60.9 | 51.5 | 0.85x | 0.73x |
+| 16 | 1,102.4 | 959.8 | 814.6 | 0.85x | 0.74x |
+| 64 | 4,171.5 | 3,747.3 | 3,194.2 | 0.85x | 0.77x |
+| prefill, 8 x 512 | 47,302 | 79,715 | 98,502 | 1.24x | 2.08x |
+
+Without graphs bf16 decodes fastest and this kernel slowest. Its host cost per linear
+layer through vLLM's entry point is 29.5 microseconds against CUTLASS's 24.3
+([launch cost](#launch-cost)). Over 112 layers that accounts for about 0.6 ms of the
+3.0 ms longer decode step at batch 1. The rest has not been profiled.
+
+### Quality
+
+| backend | perplexity | mean logprob change vs bf16 (nats), 95% interval | mean absolute per-token gap to CUTLASS |
+|---|---|---|---|
+| bf16 | 20.44 | | 0.228 |
+| CUTLASS | 20.49 | -0.0021 [-0.0093, +0.0050] | 0 |
+| vLLM Triton, #45126, this repo | 20.52 | -0.0038 [-0.0109, +0.0032] | 0.156 |
+
+- **The three Triton kernels agree bit for bit.** vLLM's Triton kernel, #45126's and
+  this one produced identical logprobs at all 20,440 tokens and identical greedy
+  samples, in both runs. All three accumulate the int8 product exactly in int32 and
+  apply the scales in the same order, so their tile choices cannot change the result.
+- **CUTLASS's results differ, but not in one direction.** Its per-token logprobs differ
+  from the Triton kernels' by a mean 0.156 nats, with a mean difference of -0.0017
+  (95% interval -0.0059 to +0.0025).
+- **No measurable cost against bf16.** Neither int8 backend's change is distinguishable
+  from zero on these 20,440 tokens. The upper ends of the intervals correspond to 0.9%
+  (CUTLASS) and 1.1% (Triton) higher perplexity.
+
+### Two runs, and what isolated tuning missed
+
+The first end-to-end run ([`results/e2e_run1.md`](results/e2e_run1.md)) found two
+losses, and both were addressed before the second:
+
+- **A gap in the tuned table.** It covered M = 1, 4, 16, 64 and up, so batches of 17 to
+  63 used a configuration tuned for 16. At M=33 to 56, gate_up_proj ran at 0.50x to 0.53x
+  of CUTLASS. The second run tuned at every batch size vLLM captures CUDA graphs at.
+- **The custom op in eager runs.** vLLM called the kernel through its custom op even when
+  nothing was being compiled, at 57.9 microseconds per call against 29.5 directly. The
+  second run calls it directly unless torch.compile is tracing.
+
+Backends that did not change moved by at most 0.4% between the runs with CUDA graphs,
+and by up to 2.3% without. This kernel's eager decode rose 6.0% to 6.3%, from 0.81x to
+0.85x of CUTLASS. With CUDA graphs:
+
+| batch | this repo, run 1 | this repo, run 2 | change | largest change among the other four backends |
+|---|---|---|---|---|
+| 1 | 325 | 325 | +0.0% | 0.1% |
+| 4 | 1,252 | 1,252 | +0.0% | 0.2% |
+| 16 | 4,672 | 4,671 | -0.0% | 0.4% |
+| 32 | 8,746 | 8,664 | -0.9% | 0.1% |
+| 48 | 11,466 | 11,877 | +3.6% | 0.2% |
+| 64 | 14,659 | 14,655 | -0.0% | 0.3% |
+| 128 | 22,417 | 20,971 | -6.5% | 0.1% |
+
+Batch 48 improved as the per-layer numbers predicted. Batches 32 and 128 got slower,
+although in isolation the new configurations were faster at both. Microseconds per
+decoder layer, where the first three columns sum the four linear layers as timed alone
+by the dispatch sweep in each run:
+
+| batch | four layers, run 1 table | run 2 table | predicted change | measured change in the decode step |
+|---|---|---|---|---|
+| 32 | 33.4 | 29.2 | -4.1 | +1.2 |
+| 48 | 51.6 | 32.3 | -19.3 | -5.2 |
+| 128 | 53.7 | 50.3 | -3.5 | +14.1 |
+
+The same gap shows against #45126. At batch 64 this kernel's four layers take 34.1
+microseconds per decoder layer alone and #45126's take 44.1, yet both decode steps take
+4.37 ms. The per-layer benchmark replays each kernel alone and back to back; inside the
+model each layer runs between other work. Something in that difference, not identified
+here, changes which configuration is fastest. The table from the second run is the one in
+`int8_linear/tuned_configs.json` and behind the end-to-end numbers above; the first run's is kept
+as `results/tuned_configs_run1.json`.
+
+## What causes the CUTLASS slowdown
+
+The per-layer benchmark found CUTLASS's time roughly doubling from M=16 to M=64 at every
+Qwen3-1.7B shape. On Ada, vLLM's source (`csrc/libtorch_stable/quantization/w8a8/cutlass/scaled_mm_c2x_sm89_int8_dispatch.cuh`)
+compiles one CUTLASS configuration per bucket of next_pow_2(M), floored at 16: [1, 16],
+(16, 32], (32, 64], (64, 128], (128, 256] and above. Within a bucket it picks by
+next_pow_2(N).
+
+[`bench/cutlass_cliff.py`](bench/cutlass_cliff.py) states its prediction in its
+docstring, written before it ran: if those configurations cause the slowdown, CUTLASS's
+time jumps between adjacent M at a bucket edge and stays flat inside buckets, while the
+Triton kernels cross the same edges smoothly. gate_up_proj, whose next_pow_2(N) is 16384,
+gets a different configuration in those buckets, so it need not jump where the others do.
+
+That held. Microseconds per layer under CUDA-graph replay, second run; the first run gave
+the same steps to two decimals:
+
+| layer | N | CUTLASS M=16 | M=17 | M=32 | M=33 | M=64 | CUTLASS 16 to 17 | CUTLASS 32 to 33 | vLLM Triton 16 to 17 | #45126 16 to 17 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| q_proj, o_proj | 2048 | 4.95 | 7.82 | 7.32 | 8.99 | 9.26 | 1.58x | 1.23x | 1.06x | 1.01x |
+| k_proj, v_proj | 1024 | 4.51 | 6.92 | 7.07 | 8.75 | 9.09 | 1.54x | 1.24x | 1.05x | 1.00x |
+| qkv_proj | 4096 | 5.35 | 10.27 | 10.53 | 12.31 | 12.92 | 1.92x | 1.17x | 1.06x | 1.00x |
+| gate_proj, up_proj | 6144 | 6.71 | 13.36 | 13.78 | 15.04 | 16.24 | 1.99x | 1.09x | 1.01x | 0.99x |
+| gate_up_proj | 12288 | 10.73 | 11.41 | 12.07 | 13.22 | 14.52 | 1.06x | 1.09x | 1.04x | 0.99x |
+| down_proj | 2048 | 9.18 | 12.05 | 12.28 | 16.03 | 16.28 | 1.31x | 1.31x | 1.07x | 1.00x |
+
+- Inside a bucket CUTLASS barely moves: from M=17 to 32, and from 33 to 64, its time
+  changes by at most 10% at any shape while M nearly doubles.
+- vLLM's own Triton kernel steps where its tile heuristic changes instead: 1.13x to 1.94x
+  from M=64 to 65 and 1.61x to 1.86x from 128 to 129.
+- **One part of the prediction did not hold.** bf16 was meant as a second smooth
+  control, but its time also jumps at those sizes (0.53x to 1.24x from M=16 to 17).
+  Only the Triton kernels were smooth.
+- **The practical effect.** CUTLASS is slower than bf16 at 43 of the sweep's 120 points,
+  all at M=17 or above. vLLM pads each decode batch up to a captured batch size, so
+  every batch of 17 to 64 lands in those buckets.
+- **Not established here:** why the (16, 32] and (32, 64] configurations are slow. The
+  sweep ties the slowdown to them, not to a mechanism inside them.
+
+## Launch cost
+
+q_proj at M=1, microseconds per call ([`bench/launch_overhead.py`](bench/launch_overhead.py)).
+Host is CPU time with nothing synchronized, back-to-back is what a step without CUDA
+graphs pays, and graph is the GPU work alone.
+
+| path | host | back-to-back | graph |
+|---|---|---|---|
+| bf16 F.linear (cuBLAS) | 10.5 | 10.5 | 6.31 |
+| int8 CUTLASS (vLLM) | 24.3 | 24.4 | 4.49 |
+| int8 Triton (vLLM) | 45.3 | 45.4 | 5.89 |
+| this repo, through Triton's JIT dispatch | 36.7 | 36.8 | 3.93 |
+| this repo, cached launch | 27.4 | 27.5 | 3.93 |
+| this repo, behind the custom op | 57.9 | 57.9 | 3.93 |
+| this repo, through vLLM's entry point | 29.5 | 29.4 | 3.93 |
+
+Skipping Triton's JIT dispatch saves 9.3 microseconds per call. That leaves this kernel
+3.1 microseconds behind CUTLASS on host cost, although its GPU work is the smallest of
+the four.
+
+## Per-layer results
 
 RTX 4090, vLLM 0.28.0, Triton 3.7.1, torch 2.13.0+cu130, Qwen3-1.7B layer shapes, no bias. Microseconds per layer under CUDA-graph replay, median of five windows, with no other process on the GPU. The worst window spread was 6.1% of its median. Full output, including back-to-back timings and every tuned configuration, is in [`results/`](results/).
 
@@ -113,23 +330,39 @@ RTX 4090, vLLM 0.28.0, Triton 3.7.1, torch 2.13.0+cu130, Qwen3-1.7B layer shapes
 
 **The tuned Triton kernel is faster than vLLM's CUTLASS kernel at all 28 points,** by a median 1.26x (1.05x to 2.05x). It is faster than vLLM's Triton kernel at all 28 (median 1.42x, 1.04x to 3.32x) and than bf16 cuBLAS at all 28 (median 2.39x, 1.27x to 3.51x). With vLLM's per-token activation quantizer inside the timing it is still ahead of CUTLASS at all 28 points (median 1.21x, 1.04x to 2.02x). At M=4096 it runs at 538 to 594 TOPS, against 278 to 489 for CUTLASS.
 
-**Confirmed on a fresh run.** Rerun without tuning, with this repo's kernel reading its
-configurations from the stored table, it is again faster than CUTLASS at all 28 points
+**Confirmed twice more.** Rerun without tuning, with this repo's kernel reading its
+configurations from the stored table, it was again faster than CUTLASS at all 28 points
 (median 1.29x, 1.05x to 2.24x) and than bf16 at all 28 (median 2.39x). Its time with the
 stored table was a median 0.999 of the time the sweep had picked, so choosing and reporting
-from the same run added no measurable optimism. Between the two runs CUTLASS timings moved
-by a median 2%, and bf16 by less than 0.1%.
+from the same run added no measurable optimism. Between those two runs CUTLASS timings moved
+by a median 2%, and bf16 by less than 0.1%. A third run, which added the #45126 column, gave
+28 of 28 again (median 1.29x, 1.05x to 2.25x).
 
-**CUTLASS has a cliff at M=64 on this GPU.** From M=16 to M=64 its time roughly doubles at every shape, and at M=64 it is slower than bf16 for 3 of 4 shapes (q_proj 0.81x, k_proj 0.67x, down_proj 0.92x), and for all 4 with activation quantization (q_proj 0.71x, k_proj 0.59x, gate_proj 0.93x, down_proj 0.82x). vLLM's own benchmark shows the same cliff, and in the confirmation run CUTLASS alone was slower than bf16 at M=64 for all four shapes.
+**CUTLASS at M=64.** At M=64 it is slower than bf16 for 3 of 4 shapes (q_proj 0.81x, k_proj 0.67x, down_proj 0.92x), and for all 4 with activation quantization (q_proj 0.71x, k_proj 0.59x, gate_proj 0.93x, down_proj 0.82x). vLLM's own benchmark shows the same. The slowdown starts at M=17 ([above](#what-causes-the-cutlass-slowdown)).
 
-**Where it loses.**
+**#45126's tables do not beat CUTLASS at these batch sizes.** Its kernel is a median 0.99x
+of CUTLASS on these shapes (faster at 14 of 28), 0.86x on the layers as vLLM merges them
+(9 of 28) and 0.86x on Llama-3-8B (8 of 28). It is weakest at small M, at 0.66x to 0.79x of
+CUTLASS for M=1 to 16 on q_proj, k_proj and down_proj, and ahead at M=64 and 256 on all four
+shapes. This kernel is faster than #45126's at 24 of 28 points (median 1.55x), and within
+2% at the other four.
 
-- **Without CUDA graphs, at decode.** At M=1 on q_proj, back-to-back launches take 37.0 microseconds for this kernel against 25.0 for CUTLASS and 10.6 for bf16: Triton's Python launcher costs more than the kernel. The advantage exists only under CUDA graphs, which vLLM uses for decode, or at large M.
-- **Untuned.** The fixed default configuration is a median 1.01x of CUTLASS and slower at 14 of 28 points. The advantage comes from per-shape tuning.
-- **Narrowly at some shapes.** The smallest margin over CUTLASS is 1.05x (down_proj, M=256), in both runs.
-- **No accuracy measurement.** Everything here is kernel time on random operands; what naive W8A8 costs a real model is not measured yet.
+**At vLLM's batch sizes.** Tuned on the layers as vLLM merges them, at vLLM's
+51 CUDA-graph batch sizes plus 1024, 2048 and 4096 (216 points), this kernel is faster than
+CUTLASS at all 216 (median 1.44x, 1.02x to 1.99x), than vLLM's Triton kernel at all 216
+(median 1.61x) and than bf16 at all 216 (median 2.43x). With activation quantization it is
+ahead of CUTLASS at all 216 (median 1.39x). It is faster than #45126's at 201 (median 1.31x),
+and within 2% at the other 15. Across these batch sizes #45126 is a median 1.08x of CUTLASS
+(faster at 143), because more of them fall where CUTLASS is slow. The worst window spread in
+this run was 13.7%.
 
-vLLM's own Triton kernel is a median 0.93x of CUTLASS. It is weakest at M=256, where its fixed tile heuristic leaves it at 0.42x to 0.54x of CUTLASS on three of the four shapes; on gate_proj it is 1.06x.
+**Llama-3-8B.** Tuned on its merged layer shapes, this kernel is faster than CUTLASS at 27 of
+28 points (median 1.14x, 0.95x to 1.62x), losing at down_proj M=16. It is faster than bf16 at
+all 28 (median 2.68x), and with activation quantization ahead of CUTLASS at 27 of 28 (median
+1.13x). Against #45126 it is faster at 25 of 28 (median 1.37x), losing at M=64 on qkv_proj,
+o_proj and down_proj (0.90x to 0.95x).
+
+vLLM's own Triton kernel is a median 0.93x of CUTLASS on the Qwen3-1.7B shapes. It is weakest at M=256, where its fixed tile heuristic leaves it at 0.42x to 0.54x of CUTLASS on three of the four shapes; on gate_proj it is 1.06x.
 
 ### q_proj, o_proj: K=2048, N=2048
 
@@ -179,46 +412,63 @@ vLLM's own Triton kernel is a median 0.93x of CUTLASS. It is weakest at M=256, w
 | 1024 | 159.4 | 55.7 | 59.9 | 47.2 | 1.18x |
 | 4096 | 608.0 | 210.7 | 234.1 | 173.5 | 1.21x |
 
-## Status
+## Where it loses
 
-1. **Kernel, tests and benchmark: built, run once, and checked.** The first run
-   (RTX 4090, Qwen3-1.7B shapes, vLLM 0.28.0, Triton 3.7.1) is kept as
-   `results/*_run1_bias.*`. Checking it found two problems, both in this
-   benchmark rather than in vLLM:
-   - **vLLM's `triton_scaled_mm` is not wrong.** It failed the float64 check at
-     nearly every shape, but `bench/diagnose_vllm_triton.py` shows its int32
-     product is exact with the weight in either layout and with
-     tensor-descriptor loads on or off. It rounds the scaled product to bf16 and
-     then adds the bias, so where the two nearly cancel, the output lands a
-     rounding step of the product away from a near-zero sum, sometimes at exactly
-     zero. The check divided by that sum. It now divides by the larger of the sum
+- **Without CUDA graphs.** End to end, decode is 0.85x CUTLASS and 0.73x to 0.77x bf16.
+  Host cost per call explains only part of the gap.
+- **Tuning from isolated timings.** The tuned table is chosen per layer in isolation, and at
+  batches 32 and 128 the configurations that won there made the served model slower. End to
+  end, the lead over #45126 is 1.02x to 1.03x at batch 1 to 16 and nothing from 32 up,
+  despite a 1.28x median per layer at decode batch sizes.
+- **Untuned.** The fixed default configuration is a median 1.01x of CUTLASS in the main run
+  and slower at 14 of 28 points. The advantage comes from per-shape tuning.
+- **Narrow margins.** The smallest per-layer margin over CUTLASS is 1.02x, and on Llama-3-8B
+  down_proj at M=16 it loses (0.95x).
+- **Scope.** One GPU, one model served end to end, one checkpoint, and 20,440 tokens of
+  perplexity, which cannot resolve differences much below 1%.
+
+## How the runs went
+
+1. **First per-layer run** (`results/*_run1_bias.*`). Checking it found two problems, both
+   in this benchmark rather than in vLLM:
+   - **vLLM's `triton_scaled_mm` is not wrong.** It failed the float64 check at nearly
+     every shape, but `bench/diagnose_vllm_triton.py` shows its int32 product is exact with
+     the weight in either layout and with tensor-descriptor loads on or off. It rounds the
+     scaled product to bf16 and then adds the bias, so where the two nearly cancel, the
+     output lands a rounding step of the product away from a near-zero sum, sometimes at
+     exactly zero. The check divided by that sum. It now divides by the larger of the sum
      and its matmul term.
-   - **The first run slowed CUTLASS down.** Its layers carried a bias, which the
-     Qwen3 layers do not have. Against vLLM's own
-     `benchmarks/kernels/benchmark_int8_gemm.py` on the same GPU, bf16 timings
-     agreed (median ratio 1.00) while CUTLASS measured a median 1.33x slower here,
-     up to 1.71x. Bias is now off by default. Comparisons with CUTLASS wait for a
-     single-process rerun, since set against vLLM's own numbers they would mix two
-     runs.
-2. **Rerun with bias off and the corrected check: done.** Those are the results above.
-3. **Confirmation run: done.** No tuning, configurations from `int8_linear/tuned_configs.json`,
-   all 25 tests passing; results in `results/*_confirm.*`.
-4. End to end: Qwen3-1.7B decode throughput under CUDA graphs with these layers
-   swapped in, and the perplexity cost of naive W8A8.
-5. Once end-to-end numbers exist, the Ada measurements go upstream: the CUTLASS cliff at
-   M=64 as a vLLM issue with data, and tuned configurations alongside
-   [#45126](https://github.com/vllm-project/vllm/pull/45126).
+   - **The first run slowed CUTLASS down.** Its layers carried a bias, which the Qwen3
+     layers do not have. Against vLLM's own `benchmarks/kernels/benchmark_int8_gemm.py` on
+     the same GPU, bf16 timings agreed (median ratio 1.00) while CUTLASS measured a median
+     1.33x slower here, up to 1.71x. Bias is now off by default.
+2. **Rerun with bias off and the corrected check.** The per-layer tables above.
+3. **Confirmation run** with stored configurations (`results/*_confirm.*`).
+4. **First end-to-end run** (`results/*_run1.*`), with the dispatch sweep, launch cost, and
+   #45126 and Llama-3-8B per layer. It found the two losses described above.
+5. **Second end-to-end run** after both changes, with tuning at vLLM's batch sizes. All 39
+   tests passed. These are the end-to-end, dispatch and launch numbers above.
+
+## Next
+
+- Tune against the served model's decode step time instead of isolated layer time.
+- Profile eager decode to account for the rest of its gap to CUTLASS.
+- A second GPU.
+- Upstream: the CUTLASS bucket measurements as a vLLM issue, and the Ada measurements
+  alongside [#45126](https://github.com/vllm-project/vllm/pull/45126).
 
 ## Reproduce
 
 On a CUDA machine with torch, Triton and vLLM:
 
 ```bash
-bash tools/run_vm.sh              # tests, tuning sweep and benchmark
+bash tools/run_vm.sh              # tests, tuning sweep and per-layer benchmark
 bash tools/verify_vm.sh           # vLLM Triton diagnostic and vLLM's own benchmark
 python bench/bench_linear.py --tag confirm   # stored configurations, no tuning
+bash tools/run_e2e_vm.sh          # tuning at vLLM's batch sizes, dispatch sweep, launch cost, end to end, #45126 and Llama per layer
 ```
 
 ## License
 
-MIT.
+MIT, except [`int8_linear/pr45126.py`](int8_linear/pr45126.py), which is vendored from
+vLLM and keeps its Apache-2.0 header.

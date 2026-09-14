@@ -1,5 +1,6 @@
 """W8A8 int8 linear layers on one GPU: this repo's Triton kernel against vLLM's
-CUTLASS and Triton kernels, an unfused torch._int_mm path, and bf16 cuBLAS.
+CUTLASS and Triton kernels, the Triton tables proposed in vLLM #45126, an unfused
+torch._int_mm path, and bf16 cuBLAS.
 
 For every linear-layer shape and number of tokens M, each provider computes the
 same layer, A @ W^T (plus a bias with --bias), from the same quantized operands,
@@ -36,6 +37,7 @@ import torch.nn.functional as F
 import triton
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from int8_linear import pr45126  # noqa: E402
 from int8_linear.kernel import (  # noqa: E402
     TUNED_PATH,
     Config,
@@ -62,6 +64,9 @@ SMEM_LIMIT = 99 * 1024  # the most shared memory one block can opt into on sm_89
 BF16 = "bf16 F.linear (cuBLAS)"
 CUTLASS = "int8 CUTLASS (vLLM)"
 VLLM_TRITON = "int8 Triton (vLLM)"
+# vLLM's Triton kernel with the tuned tables from vllm-project/vllm#45126, vendored in
+# int8_linear/pr45126.py so it runs next to the shipped one.
+PR45126 = "int8 Triton (vLLM #45126 tables)"
 INT_MM = "int8 torch._int_mm, unfused"
 OURS_DEFAULT = "int8 Triton (this repo, default)"
 OURS_TUNED = "int8 Triton (this repo, tuned)"
@@ -71,7 +76,7 @@ OURS_TUNED = "int8 Triton (this repo, tuned)"
 OURS_TABLE = "int8 Triton (this repo, stored table)"
 CUTLASS_Q = "int8 CUTLASS (vLLM) + quant"
 OURS_Q = "int8 Triton (this repo) + quant"
-INT8 = [CUTLASS, VLLM_TRITON, INT_MM, OURS_DEFAULT, OURS_TUNED, OURS_TABLE]
+INT8 = [CUTLASS, VLLM_TRITON, PR45126, INT_MM, OURS_DEFAULT, OURS_TUNED, OURS_TABLE]
 
 
 def first_line(e: BaseException) -> str:
@@ -241,6 +246,8 @@ def providers(d: dict, m: int, k: int, n: int, ops, vllm_triton) -> dict:
         INT_MM: (int_mm_unfused, ref, term),
         OURS_DEFAULT: (ours, ref, term),
         OURS_TABLE: (partial(w8a8_mm, a_q, w_qt, a_s, w_s, OUT_DTYPE, bias), ref, term),
+        PR45126: (partial(pr45126.triton_scaled_mm, a_q, w_qt, a_s, w_s, OUT_DTYPE, bias),
+                  ref, term),
     }
     if ops is not None:
         cutlass = partial(ops.cutlass_scaled_mm, a_q, w_qt, a_s, w_s, OUT_DTYPE, bias)
@@ -292,7 +299,7 @@ def environment(vllm_version: str, windows: int, bias: bool) -> dict:
             "driver": driver, "torch": torch.__version__, "triton": triton.__version__,
             "vllm": vllm_version, "python": platform.python_version(),
             "vllm_triton_use_td": os.environ.get("VLLM_TRITON_USE_TD", "unset"),
-            "windows": windows, "bias": bias}
+            "windows": windows, "bias": bias, "pr45126": pr45126.table_label()}
 
 
 def fmt(v: float | None) -> str:
@@ -319,7 +326,8 @@ def markdown(res: dict, batch: list[int]) -> str:
         f"# W8A8 int8 linear layers on {env['device']} ({env['sm']})",
         "",
         f"torch {env['torch']}, Triton {env['triton']}, vLLM {env['vllm']}, driver "
-        f"{env['driver']}, VLLM_TRITON_USE_TD={env['vllm_triton_use_td']}.",
+        f"{env['driver']}, VLLM_TRITON_USE_TD={env['vllm_triton_use_td']}, #45126 on its "
+        f"{env.get('pr45126', 'n/a')}.",
         "",
         f"Microseconds per layer, bf16 output, {'with' if env.get('bias') else 'no'} bias, "
         f"CUDA-graph replay, median of {env['windows']} windows. Every number passed a "
@@ -337,10 +345,11 @@ def markdown(res: dict, batch: list[int]) -> str:
             mine = t[OURS_TUNED] or t[OURS_TABLE]
             body.append([str(m), *(fmt(t[p]) for p in [BF16, *INT8]),
                          speedup(t[CUTLASS], mine), speedup(t[VLLM_TRITON], mine),
+                         speedup(t[PR45126], mine),
                          speedup(t[BF16], min(int8_times) if int8_times else None)])
-        out += table(["M", "bf16", "CUTLASS", "vLLM Triton", "_int_mm", "ours default",
-                      "ours tuned", "ours table", "ours over CUTLASS", "ours over vLLM Triton",
-                      "best int8 over bf16"], body)
+        out += table(["M", "bf16", "CUTLASS", "vLLM Triton", "#45126", "_int_mm",
+                      "ours default", "ours tuned", "ours table", "ours over CUTLASS",
+                      "ours over vLLM Triton", "ours over #45126", "best int8 over bf16"], body)
         body = []
         for m in batch:
             t = {p: us(label, m, p) for p in (BF16, CUTLASS_Q, OURS_Q)}
@@ -409,7 +418,7 @@ def main() -> None:
 
     for label, k, n in SHAPES[args.shapes]:
         for m in batch:
-            iters = ITERS.get(m, 5)
+            iters = ITERS.get(m) or max(5, min(200, 3200 // m))
             d = operands(m, k, n, seed=m * 7919 + k * 31 + n, with_bias=args.bias)
             best: tuple[Config, float] | None = None
             if args.tune:

@@ -1,0 +1,794 @@
+{
+ "NVIDIA GeForce RTX 4090": {
+  "14336x4096": {
+   "1": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 16.751680374145508
+   },
+   "1024": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 256,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 8
+    },
+    "graph_us": 200.80640316009521
+   },
+   "16": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 21.74976110458374
+   },
+   "256": {
+    "config": {
+     "bk": 128,
+     "bm": 64,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 77.09439992904663
+   },
+   "4": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 17.341439723968506
+   },
+   "4096": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 256,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 8
+    },
+    "graph_us": 811.0079765319824
+   },
+   "64": {
+    "config": {
+     "bk": 128,
+     "bm": 64,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 36.863999366760254
+   }
+  },
+  "2048x1024": {
+   "1": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 3.5276800394058228
+   },
+   "1024": {
+    "config": {
+     "bk": 64,
+     "bm": 64,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 12.998400628566742
+   },
+   "16": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 3.696640133857727
+   },
+   "256": {
+    "config": {
+     "bk": 128,
+     "bm": 64,
+     "bn": 64,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 6.297600269317627
+   },
+   "4": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 3.5582399368286133
+   },
+   "4096": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 1,
+     "warps": 4
+    },
+    "graph_us": 32.153600454330444
+   },
+   "64": {
+    "config": {
+     "bk": 128,
+     "bm": 32,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 4.628480076789856
+   }
+  },
+  "2048x12288": {
+   "1": {
+    "config": {
+     "bk": 128,
+     "bm": 16,
+     "bn": 128,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 6.906880140304565
+   },
+   "1024": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 91.85280203819275
+   },
+   "16": {
+    "config": {
+     "bk": 128,
+     "bm": 16,
+     "bn": 128,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 8.212479948997498
+   },
+   "256": {
+    "config": {
+     "bk": 64,
+     "bm": 64,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 1,
+     "warps": 4
+    },
+    "graph_us": 28.10879945755005
+   },
+   "4": {
+    "config": {
+     "bk": 128,
+     "bm": 16,
+     "bn": 128,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 7.070720195770264
+   },
+   "4096": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 355.5327892303467
+   },
+   "64": {
+    "config": {
+     "bk": 128,
+     "bm": 64,
+     "bn": 128,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 11.24351978302002
+   }
+  },
+  "2048x2048": {
+   "1": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 3.5891199111938477
+   },
+   "1024": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 8
+    },
+    "graph_us": 18.432000279426575
+   },
+   "16": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 3.8681599497795105
+   },
+   "256": {
+    "config": {
+     "bk": 128,
+     "bm": 64,
+     "bn": 64,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 8.904000371694565
+   },
+   "4": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 3.6238399147987366
+   },
+   "4096": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 62.20800280570984
+   },
+   "64": {
+    "config": {
+     "bk": 128,
+     "bm": 32,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 4.874239861965179
+   }
+  },
+  "2048x4096": {
+   "1": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 4.080640077590942
+   },
+   "1024": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 1,
+     "warps": 4
+    },
+    "graph_us": 31.12959861755371
+   },
+   "16": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 4.730879962444305
+   },
+   "256": {
+    "config": {
+     "bk": 64,
+     "bm": 64,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 13.77280056476593
+   },
+   "4": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 4.193280041217804
+   },
+   "4096": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 120.01279592514038
+   },
+   "64": {
+    "config": {
+     "bk": 128,
+     "bm": 64,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 7.516160011291504
+   }
+  },
+  "2048x6144": {
+   "1": {
+    "config": {
+     "bk": 128,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 4.479359984397888
+   },
+   "1024": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 8
+    },
+    "graph_us": 48.52159917354584
+   },
+   "16": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 5.3145599365234375
+   },
+   "256": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 8
+    },
+    "graph_us": 17.664000391960144
+   },
+   "4": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 4.951040148735046
+   },
+   "4096": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 180.63360452651978
+   },
+   "64": {
+    "config": {
+     "bk": 128,
+     "bm": 64,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 7.512959837913513
+   }
+  },
+  "4096x28672": {
+   "1": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 125.36319732666016
+   },
+   "1024": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 8
+    },
+    "graph_us": 414.20159339904785
+   },
+   "16": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 128,
+     "group_m": 1,
+     "stages": 1,
+     "warps": 4
+    },
+    "graph_us": 127.30208396911621
+   },
+   "256": {
+    "config": {
+     "bk": 128,
+     "bm": 64,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 163.77919912338257
+   },
+   "4": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 128,
+     "group_m": 1,
+     "stages": 1,
+     "warps": 4
+    },
+    "graph_us": 125.68575859069824
+   },
+   "4096": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 8
+    },
+    "graph_us": 1661.9327545166016
+   },
+   "64": {
+    "config": {
+     "bk": 256,
+     "bm": 64,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 133.8163185119629
+   }
+  },
+  "4096x4096": {
+   "1": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 5.806080102920532
+   },
+   "1024": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 1,
+     "warps": 4
+    },
+    "graph_us": 56.83199763298035
+   },
+   "16": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 7.362560033798218
+   },
+   "256": {
+    "config": {
+     "bk": 128,
+     "bm": 64,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 23.851199448108673
+   },
+   "4": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 5.954560041427612
+   },
+   "4096": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 229.99041080474854
+   },
+   "64": {
+    "config": {
+     "bk": 128,
+     "bm": 64,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 11.448320150375366
+   }
+  },
+  "4096x6144": {
+   "1": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 7.807999849319458
+   },
+   "1024": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 8
+    },
+    "graph_us": 90.11200070381165
+   },
+   "16": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 9.215999841690063
+   },
+   "256": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 8
+    },
+    "graph_us": 31.897601485252377
+   },
+   "4": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 7.311360239982605
+   },
+   "4096": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 344.66559886932373
+   },
+   "64": {
+    "config": {
+     "bk": 256,
+     "bm": 64,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 15.564800500869751
+   }
+  },
+  "6144x2048": {
+   "1": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 7.598080039024353
+   },
+   "1024": {
+    "config": {
+     "bk": 128,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 46.89919948577881
+   },
+   "16": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 8.038399815559387
+   },
+   "256": {
+    "config": {
+     "bk": 256,
+     "bm": 64,
+     "bn": 64,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 23.756800591945648
+   },
+   "4": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 7.649279832839966
+   },
+   "4096": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 1,
+     "warps": 4
+    },
+    "graph_us": 174.69439506530762
+   },
+   "64": {
+    "config": {
+     "bk": 256,
+     "bm": 32,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 11.59168004989624
+   }
+  }
+ }
+}
