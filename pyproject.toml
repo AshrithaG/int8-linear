@@ -1,0 +1,19 @@
+[project]
+name = "int8-linear"
+version = "0.1.0"
+description = "W8A8 int8 linear layers in Triton, measured against vLLM's CUTLASS and Triton kernels"
+requires-python = ">=3.10"
+dependencies = ["torch>=2.6", "triton>=3.2"]
+
+[project.optional-dependencies]
+bench = ["vllm"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.setuptools]
+packages = ["int8_linear"]

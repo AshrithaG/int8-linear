@@ -1,0 +1,320 @@
+{
+ "NVIDIA GeForce RTX 4090": {
+  "2048x1024": {
+   "1": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 3.5276800394058228
+   },
+   "1024": {
+    "config": {
+     "bk": 64,
+     "bm": 64,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 12.998400628566742
+   },
+   "16": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 3.696640133857727
+   },
+   "256": {
+    "config": {
+     "bk": 128,
+     "bm": 64,
+     "bn": 64,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 6.297600269317627
+   },
+   "4": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 3.5582399368286133
+   },
+   "4096": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 1,
+     "warps": 4
+    },
+    "graph_us": 32.153600454330444
+   },
+   "64": {
+    "config": {
+     "bk": 128,
+     "bm": 32,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 4.628480076789856
+   }
+  },
+  "2048x2048": {
+   "1": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 3.9219200611114498
+   },
+   "1024": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 8
+    },
+    "graph_us": 18.534399569034576
+   },
+   "16": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 4.259839951992035
+   },
+   "256": {
+    "config": {
+     "bk": 128,
+     "bm": 64,
+     "bn": 64,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 9.676799923181534
+   },
+   "4": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 3.9270401000976562
+   },
+   "4096": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 62.463998794555664
+   },
+   "64": {
+    "config": {
+     "bk": 128,
+     "bm": 32,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 5.36575973033905
+   }
+  },
+  "2048x6144": {
+   "1": {
+    "config": {
+     "bk": 128,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 4.479359984397888
+   },
+   "1024": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 8
+    },
+    "graph_us": 48.52159917354584
+   },
+   "16": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 5.3145599365234375
+   },
+   "256": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 8
+    },
+    "graph_us": 17.664000391960144
+   },
+   "4": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 4.951040148735046
+   },
+   "4096": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 180.63360452651978
+   },
+   "64": {
+    "config": {
+     "bk": 128,
+     "bm": 64,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 7.512959837913513
+   }
+  },
+  "6144x2048": {
+   "1": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 7.613440155982971
+   },
+   "1024": {
+    "config": {
+     "bk": 128,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 47.308799624443054
+   },
+   "16": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 8.130559921264648
+   },
+   "256": {
+    "config": {
+     "bk": 256,
+     "bm": 64,
+     "bn": 64,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 22.988800704479218
+   },
+   "4": {
+    "config": {
+     "bk": 256,
+     "bm": 16,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 7.623680233955383
+   },
+   "4096": {
+    "config": {
+     "bk": 64,
+     "bm": 128,
+     "bn": 128,
+     "group_m": 8,
+     "stages": 3,
+     "warps": 8
+    },
+    "graph_us": 173.46559762954712
+   },
+   "64": {
+    "config": {
+     "bk": 256,
+     "bm": 32,
+     "bn": 64,
+     "group_m": 1,
+     "stages": 3,
+     "warps": 4
+    },
+    "graph_us": 11.407359838485718
+   }
+  }
+ }
+}
