@@ -3,8 +3,8 @@
 W8A8 int8 linear layers for LLM inference on a consumer GPU: a Triton kernel,
 tuned and measured against vLLM's CUTLASS and Triton kernels and bf16 cuBLAS.
 
-**Status: measured on an RTX 4090 and cross-checked against vLLM's own benchmark.
-A confirmation run with stored configurations is pending; see Status.**
+**Status: measured on an RTX 4090, cross-checked against vLLM's own benchmark, and
+confirmed on a second run. Kernel-level only so far; end-to-end decode throughput is next.**
 
 ## The question
 
@@ -113,13 +113,20 @@ RTX 4090, vLLM 0.28.0, Triton 3.7.1, torch 2.13.0+cu130, Qwen3-1.7B layer shapes
 
 **The tuned Triton kernel is faster than vLLM's CUTLASS kernel at all 28 points,** by a median 1.26x (1.05x to 2.05x). It is faster than vLLM's Triton kernel at all 28 (median 1.42x, 1.04x to 3.32x) and than bf16 cuBLAS at all 28 (median 2.39x, 1.27x to 3.51x). With vLLM's per-token activation quantizer inside the timing it is still ahead of CUTLASS at all 28 points (median 1.21x, 1.04x to 2.02x). At M=4096 it runs at 538 to 594 TOPS, against 278 to 489 for CUTLASS.
 
-**CUTLASS has a cliff at M=64 on this GPU.** From M=16 to M=64 its time roughly doubles at every shape, and at M=64 it is slower than bf16 for 3 of 4 shapes (q_proj 0.81x, k_proj 0.67x, down_proj 0.92x), and for all 4 with activation quantization (q_proj 0.71x, k_proj 0.59x, gate_proj 0.93x, down_proj 0.82x). vLLM's own benchmark shows the same cliff.
+**Confirmed on a fresh run.** Rerun without tuning, with this repo's kernel reading its
+configurations from the stored table, it is again faster than CUTLASS at all 28 points
+(median 1.29x, 1.05x to 2.24x) and than bf16 at all 28 (median 2.39x). Its time with the
+stored table was a median 0.999 of the time the sweep had picked, so choosing and reporting
+from the same run added no measurable optimism. Between the two runs CUTLASS timings moved
+by a median 2%, and bf16 by less than 0.1%.
+
+**CUTLASS has a cliff at M=64 on this GPU.** From M=16 to M=64 its time roughly doubles at every shape, and at M=64 it is slower than bf16 for 3 of 4 shapes (q_proj 0.81x, k_proj 0.67x, down_proj 0.92x), and for all 4 with activation quantization (q_proj 0.71x, k_proj 0.59x, gate_proj 0.93x, down_proj 0.82x). vLLM's own benchmark shows the same cliff, and in the confirmation run CUTLASS alone was slower than bf16 at M=64 for all four shapes.
 
 **Where it loses.**
 
 - **Without CUDA graphs, at decode.** At M=1 on q_proj, back-to-back launches take 37.0 microseconds for this kernel against 25.0 for CUTLASS and 10.6 for bf16: Triton's Python launcher costs more than the kernel. The advantage exists only under CUDA graphs, which vLLM uses for decode, or at large M.
 - **Untuned.** The fixed default configuration is a median 1.01x of CUTLASS and slower at 14 of 28 points. The advantage comes from per-shape tuning.
-- **The tuned column is optimistic.** It is the fastest of a sweep measured in the same run, so its smallest margins are within the selection effect. A confirmation run with the stored configurations is pending.
+- **Narrowly at some shapes.** The smallest margin over CUTLASS is 1.05x (down_proj, M=256), in both runs.
 - **No accuracy measurement.** Everything here is kernel time on random operands; what naive W8A8 costs a real model is not measured yet.
 
 vLLM's own Triton kernel is a median 0.93x of CUTLASS. It is weakest at M=256, where its fixed tile heuristic leaves it at 0.42x to 0.54x of CUTLASS on three of the four shapes; on gate_proj it is 1.06x.
@@ -194,12 +201,11 @@ vLLM's own Triton kernel is a median 0.93x of CUTLASS. It is weakest at M=256, w
      single-process rerun, since set against vLLM's own numbers they would mix two
      runs.
 2. **Rerun with bias off and the corrected check: done.** Those are the results above.
-3. **Confirmation run: pending.** The same benchmark without `--tune`, so this repo's kernel
-   uses the configurations stored in `int8_linear/tuned_configs.json` instead of the
-   fastest of a sweep timed in the same run.
+3. **Confirmation run: done.** No tuning, configurations from `int8_linear/tuned_configs.json`,
+   all 25 tests passing; results in `results/*_confirm.*`.
 4. End to end: Qwen3-1.7B decode throughput under CUDA graphs with these layers
    swapped in, and the perplexity cost of naive W8A8.
-5. If the confirmation holds, the Ada measurements go upstream: the CUTLASS cliff at
+5. Once end-to-end numbers exist, the Ada measurements go upstream: the CUTLASS cliff at
    M=64 as a vLLM issue with data, and tuned configurations alongside
    [#45126](https://github.com/vllm-project/vllm/pull/45126).
 
