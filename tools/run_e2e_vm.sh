@@ -8,6 +8,9 @@
 #   tune     tuning for the layer shapes vLLM runs for Qwen3-1.7B (merged qkv, gate_up)
 #   cliff    CUTLASS across its dispatch buckets (bench/cutlass_cliff.py)
 #   launch   host launch cost per call (bench/launch_overhead.py)
+#   repro    tools/cutlass_bucket_repro.py, the standalone CUTLASS repro, into results/
+#   attrib   host time inside an eager decode step, CUTLASS against this kernel
+#   situ     the stand-in model: checked against the served runs, then tuned in if it passes
 #   e2e      decode, prefill and perplexity in vLLM per backend, with and without CUDA graphs
 #   kernels  the kernel benchmark with #45126's tables on Qwen3-1.7B shapes, then Llama-3-8B
 #
@@ -29,7 +32,7 @@ fi
 [[ -n "$py" ]] || { echo "No Python with torch, triton, vllm and a visible GPU; set PYTHON." >&2; exit 1; }
 echo "python: $py"
 
-stages="${STAGES:-tests tune cliff launch e2e kernels}"
+stages="${STAGES:-tests tune cliff launch repro attrib situ e2e kernels}"
 want() { [[ " $stages " == *" $1 "* ]]; }
 step() { echo; echo "===== $* ($(date +%H:%M:%S))"; }
 # The kernel swaps only reach a model built in this process.
@@ -73,6 +76,24 @@ fi
 if want launch; then
   step "launch overhead"
   "$py" bench/launch_overhead.py || echo "LAUNCH OVERHEAD FAILED; continuing"
+fi
+
+if want repro; then
+  step "standalone CUTLASS repro"
+  "$py" tools/cutlass_bucket_repro.py 2>&1 | tee results/cutlass_bucket_repro.txt || echo "REPRO FAILED; continuing"
+fi
+
+if want attrib; then
+  for b in cutlass ours; do
+    step "eager host-time attribution: $b"
+    "$py" bench/eager_attribution.py --backend "$b" || echo "ATTRIBUTION $b FAILED; continuing"
+  done
+  "$py" bench/eager_attribution.py --report || echo "ATTRIBUTION REPORT FAILED; continuing"
+fi
+
+if want situ; then
+  step "stand-in model: check against the served runs, then tune in it if the check passes"
+  "$py" bench/situ_tune.py || echo "STAND-IN FAILED; continuing"
 fi
 
 if want e2e; then

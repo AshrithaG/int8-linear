@@ -8,19 +8,19 @@ Decode tokens per second:
 
 | batch | bf16 | CUTLASS | vLLM Triton | #45126 Triton | this repo | bf16 vs CUTLASS | vLLM Triton vs CUTLASS | #45126 Triton vs CUTLASS | this repo vs CUTLASS |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | 227.1 | 307.5 | 218.8 | 315.3 | 325.5 | 0.74x | 0.71x | 1.03x | 1.06x |
-| 4 | 809.0 | 1183.4 | 853.7 | 1216.2 | 1251.5 | 0.68x | 0.72x | 1.03x | 1.06x |
-| 16 | 3088.8 | 4407.4 | 3267.2 | 4558.0 | 4671.2 | 0.70x | 0.74x | 1.03x | 1.06x |
-| 32 | 5987.9 | 7611.6 | 6242.5 | 8563.7 | 8756.2 | 0.79x | 0.82x | 1.13x | 1.15x |
-| 48 | 8348.0 | 10298.0 | 8793.6 | 11865.4 | 12018.6 | 0.81x | 0.85x | 1.15x | 1.17x |
-| 64 | 10541.2 | 12810.0 | 11082.0 | 14646.2 | 14774.1 | 0.82x | 0.87x | 1.14x | 1.15x |
-| 128 | 16940.3 | 19041.8 | 18186.8 | 21088.3 | 22667.7 | 0.89x | 0.96x | 1.11x | 1.19x |
+| 1 | 227.0 | 307.5 | 218.7 | 315.3 | 325.3 | 0.74x | 0.71x | 1.03x | 1.06x |
+| 4 | 809.1 | 1184.3 | 853.8 | 1216.4 | 1252.3 | 0.68x | 0.72x | 1.03x | 1.06x |
+| 16 | 3093.1 | 4412.0 | 3267.7 | 4557.9 | 4671.3 | 0.70x | 0.74x | 1.03x | 1.06x |
+| 32 | 5992.9 | 7603.1 | 6256.6 | 8564.0 | 8663.7 | 0.79x | 0.82x | 1.13x | 1.14x |
+| 48 | 8346.9 | 10288.8 | 8792.2 | 11868.3 | 11877.1 | 0.81x | 0.85x | 1.15x | 1.15x |
+| 64 | 10536.7 | 12819.5 | 11079.9 | 14638.5 | 14655.2 | 0.82x | 0.86x | 1.14x | 1.14x |
+| 128 | 16960.1 | 19035.2 | 18190.6 | 21080.3 | 20970.6 | 0.89x | 0.96x | 1.11x | 1.10x |
 
 Prefill, 8 prompts of 512 tokens, prompt tokens per second:
 
 |  | bf16 | CUTLASS | vLLM Triton | #45126 Triton | this repo |
 |---|---|---|---|---|---|
-| tokens/s | 47335 | 79103 | 94666 | 80040 | 102392 |
+| tokens/s | 47490 | 79218 | 94941 | 80013 | 101919 |
 | vs CUTLASS | 0.60x | 1.00x | 1.20x | 1.01x | 1.29x |
 
 ## Without torch.compile or CUDA graphs
@@ -29,46 +29,20 @@ Decode tokens per second:
 
 | batch | bf16 | CUTLASS | this repo | bf16 vs CUTLASS | this repo vs CUTLASS |
 |---|---|---|---|---|---|
-| 1 | 72.0 | 59.4 | 52.9 | 1.21x | 0.89x |
-| 16 | 1100.6 | 929.0 | 840.7 | 1.18x | 0.90x |
-| 64 | 4274.4 | 3636.6 | 3280.2 | 1.18x | 0.90x |
+| 1 | 70.6 | 60.9 | 51.5 | 1.16x | 0.85x |
+| 16 | 1102.4 | 959.8 | 814.6 | 1.15x | 0.85x |
+| 64 | 4171.5 | 3747.3 | 3194.2 | 1.11x | 0.85x |
 
 Prefill, 8 prompts of 512 tokens, prompt tokens per second:
 
 |  | bf16 | CUTLASS | this repo |
 |---|---|---|---|
-| tokens/s | 47390 | 79634 | 101133 |
-| vs CUTLASS | 0.60x | 1.00x | 1.27x |
+| tokens/s | 47302 | 79715 | 98502 |
+| vs CUTLASS | 0.59x | 1.00x | 1.24x |
 
-## Against run 1
+## Against the first run
 
-This run's throughput over run 1's (results/e2e_*_run1.json). Backends whose code and configurations did not change show run-to-run variation.
-
-With torch.compile and CUDA graphs:
-
-|  | bf16 | CUTLASS | vLLM Triton | #45126 Triton | this repo |
-|---|---|---|---|---|---|
-| decode batch 1 | 1.00x | 1.00x | 1.00x | 1.00x | 1.00x |
-| decode batch 4 | 1.00x | 1.00x | 1.00x | 1.00x | 1.00x |
-| decode batch 16 | 1.00x | 1.00x | 1.00x | 1.00x | 1.00x |
-| decode batch 32 | 1.00x | 1.00x | 1.00x | 1.00x | 1.00x |
-| decode batch 48 | 1.00x | 1.00x | 1.00x | 1.00x | 1.05x |
-| decode batch 64 | 1.00x | 1.00x | 1.00x | 1.00x | 1.01x |
-| decode batch 128 | 1.00x | 1.00x | 1.00x | 1.00x | 1.01x |
-| prefill | 1.00x | 1.00x | 1.00x | 1.00x | 1.00x |
-
-Without torch.compile or CUDA graphs:
-
-|  | bf16 | CUTLASS | this repo |
-|---|---|---|---|
-| decode batch 1 | 1.00x | 0.99x | 1.09x |
-| decode batch 16 | 0.98x | 0.98x | 1.09x |
-| decode batch 64 | 1.00x | 0.98x | 1.09x |
-| prefill | 1.00x | 1.02x | 1.03x |
-
-## Against run 2
-
-This run's throughput over run 2's (results/e2e_*_run2.json). Backends whose code and configurations did not change show run-to-run variation.
+This run's throughput over the first run's (results/e2e_*_run1.json). Backends whose code did not change between the runs show run-to-run variation.
 
 With torch.compile and CUDA graphs:
 
@@ -77,20 +51,20 @@ With torch.compile and CUDA graphs:
 | decode batch 1 | 1.00x | 1.00x | 1.00x | 1.00x | 1.00x |
 | decode batch 4 | 1.00x | 1.00x | 1.00x | 1.00x | 1.00x |
 | decode batch 16 | 1.00x | 1.00x | 1.00x | 1.00x | 1.00x |
-| decode batch 32 | 1.00x | 1.00x | 1.00x | 1.00x | 1.01x |
-| decode batch 48 | 1.00x | 1.00x | 1.00x | 1.00x | 1.01x |
-| decode batch 64 | 1.00x | 1.00x | 1.00x | 1.00x | 1.01x |
-| decode batch 128 | 1.00x | 1.00x | 1.00x | 1.00x | 1.08x |
-| prefill | 1.00x | 1.00x | 1.00x | 1.00x | 1.00x |
+| decode batch 32 | 1.00x | 1.00x | 1.00x | 1.00x | 0.99x |
+| decode batch 48 | 1.00x | 1.00x | 1.00x | 1.00x | 1.04x |
+| decode batch 64 | 1.00x | 1.00x | 1.00x | 1.00x | 1.00x |
+| decode batch 128 | 1.00x | 1.00x | 1.00x | 1.00x | 0.94x |
+| prefill | 1.00x | 1.00x | 1.00x | 1.00x | 0.99x |
 
 Without torch.compile or CUDA graphs:
 
 |  | bf16 | CUTLASS | this repo |
 |---|---|---|---|
-| decode batch 1 | 1.02x | 0.98x | 1.03x |
-| decode batch 16 | 1.00x | 0.97x | 1.03x |
-| decode batch 64 | 1.02x | 0.97x | 1.03x |
-| prefill | 1.00x | 1.00x | 1.03x |
+| decode batch 1 | 0.98x | 1.01x | 1.06x |
+| decode batch 16 | 0.98x | 1.01x | 1.06x |
+| decode batch 64 | 0.98x | 1.01x | 1.06x |
+| prefill | 1.00x | 1.02x | 1.00x |
 
 ## Quality
 

@@ -115,6 +115,12 @@ def repeat(now: dict, before: dict, label: str) -> list[str]:
     return out
 
 
+def prior_runs() -> list[str]:
+    """Suffixes of earlier runs kept as results/e2e_*_runN.json, oldest first."""
+    numbers = {p.stem.rsplit("_run", 1)[1] for p in RESULTS.glob("e2e_*_run*.json")}
+    return [f"_run{n}" for n in sorted((n for n in numbers if n.isdigit()), key=int)]
+
+
 def main() -> None:
     graphs, eager = load(""), load("_eager")
     if not graphs and not eager:
@@ -132,16 +138,16 @@ def main() -> None:
                 *throughput(graphs), ""]
     if eager:
         out += ["## Without torch.compile or CUDA graphs", "", *throughput(eager), ""]
-    graphs1, eager1 = load("_run1"), load("_eager_run1")
-    if graphs1 or eager1:
-        out += ["## Against the first run", "",
-                "This run's throughput over the first run's (results/e2e_*_run1.json). "
-                "Backends whose code did not change between the runs show run-to-run "
-                "variation.", ""]
-        if graphs1:
-            out += [*repeat(graphs, graphs1, "With torch.compile and CUDA graphs"), ""]
-        if eager1:
-            out += [*repeat(eager, eager1, "Without torch.compile or CUDA graphs"), ""]
+    for tag in prior_runs():
+        before, before_eager = load(tag), load("_eager" + tag)
+        n = tag.removeprefix("_run")
+        out += [f"## Against run {n}", "",
+                f"This run's throughput over run {n}'s (results/e2e_*{tag}.json). Backends "
+                "whose code and configurations did not change show run-to-run variation.", ""]
+        if before:
+            out += [*repeat(graphs, before, "With torch.compile and CUDA graphs"), ""]
+        if before_eager:
+            out += [*repeat(eager, before_eager, "Without torch.compile or CUDA graphs"), ""]
     if graphs:
         out += ["## Quality", "", "Perplexity on WikiText-2 test windows, and how far each "
                 "backend's per-token logprobs sit from CUTLASS's and from bf16's.", "",

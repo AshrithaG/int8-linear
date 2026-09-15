@@ -1,0 +1,80 @@
+{
+ "backend": "cutlass",
+ "tokens": 128,
+ "env": {
+  "device": "NVIDIA GeForce RTX 4090",
+  "vllm": "0.28.0",
+  "torch": "2.13.0+cu130"
+ },
+ "interference": {
+  "before": [],
+  "after": []
+ },
+ "runs": [
+  {
+   "wall_s": 2.2002917700010585,
+   "totals_s": {
+    "activation quantizer": 0.3190718193218345,
+    "matmul call": 0.42084598338988144,
+    "apply_weights": 0.8257000312005403
+   },
+   "counts": {
+    "activation quantizer": 14336,
+    "matmul call": 14336,
+    "apply_weights": 14336
+   }
+  },
+  {
+   "wall_s": 2.2159372529858956,
+   "totals_s": {
+    "activation quantizer": 0.32243913592537865,
+    "matmul call": 0.4240866723994259,
+    "apply_weights": 0.8318397224647924
+   },
+   "counts": {
+    "activation quantizer": 14336,
+    "matmul call": 14336,
+    "apply_weights": 14336
+   }
+  },
+  {
+   "wall_s": 2.221791233008844,
+   "totals_s": {
+    "activation quantizer": 0.3235007119801594,
+    "matmul call": 0.4257553658098914,
+    "apply_weights": 0.834403615197516
+   },
+   "counts": {
+    "activation quantizer": 14336,
+    "matmul call": 14336,
+    "apply_weights": 14336
+   }
+  },
+  {
+   "wall_s": 2.2095093069947325,
+   "totals_s": {
+    "activation quantizer": 0.3212901176593732,
+    "matmul call": 0.4233384629624197,
+    "apply_weights": 0.8300546275277156
+   },
+   "counts": {
+    "activation quantizer": 14336,
+    "matmul call": 14336,
+    "apply_weights": 14336
+   }
+  },
+  {
+   "wall_s": 2.2065550639963476,
+   "totals_s": {
+    "activation quantizer": 0.3204023316211533,
+    "matmul call": 0.4227012621704489,
+    "apply_weights": 0.8285546092956793
+   },
+   "counts": {
+    "activation quantizer": 14336,
+    "matmul call": 14336,
+    "apply_weights": 14336
+   }
+  }
+ ]
+}
