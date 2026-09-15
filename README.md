@@ -366,7 +366,8 @@ the same steps to two decimals:
 - **Not established here:** why the (16, 32] and (32, 64] configurations are slow. The
   sweep ties the slowdown to them, not to a mechanism inside them.
 - [`tools/cutlass_bucket_repro.py`](tools/cutlass_bucket_repro.py) reproduces the step with
-  only torch and vLLM ([its output](results/cutlass_bucket_repro.txt)).
+  only torch and vLLM ([its output](results/cutlass_bucket_repro.txt)). Reported upstream as
+  [vllm-project/vllm#56924](https://github.com/vllm-project/vllm/issues/56924).
 
 ## Launch cost
 
@@ -528,8 +529,9 @@ vLLM's own Triton kernel is a median 0.93x of CUTLASS on the Qwen3-1.7B shapes. 
   alone.
 - Add attention to the stand-in, and check it against CUTLASS as well.
 - A second GPU.
-- Upstream: the CUTLASS bucket measurements as a vLLM issue, and the Ada measurements
-  alongside [#45126](https://github.com/vllm-project/vllm/pull/45126).
+- Follow [vllm-project/vllm#56924](https://github.com/vllm-project/vllm/issues/56924), the
+  CUTLASS bucket report, and time any patch it leads to on this GPU.
+- Share the Ada measurements alongside [#45126](https://github.com/vllm-project/vllm/pull/45126).
 
 ## Reproduce
 
