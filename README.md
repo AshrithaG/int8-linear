@@ -492,7 +492,7 @@ Every int8 linear layer quantizes its input per token right before the matmul. I
 0.28 that is a kernel of its own, `dynamic_scaled_int8_quant`, launched after the RMSNorm
 or SiLU-and-mul that produced the input: one more launch, and one more write and read of
 the activation. vLLM fuses this pair for FP8 models, but its RMSNorm-quant compile pass
-only matches FP8 quantizers, so int8 models run both kernels even though vLLM's own fused
+matches FP8 and NVFP4 quantizers and no int8 one, so int8 models run both kernels even though vLLM's own fused
 CUDA kernel, `rms_norm_dynamic_per_token_quant`, accepts int8 output. vLLM's main branch
 is the same; [vllm-project/vllm#38026](https://github.com/vllm-project/vllm/pull/38026)
 tried int8 by another route and was closed unmerged.

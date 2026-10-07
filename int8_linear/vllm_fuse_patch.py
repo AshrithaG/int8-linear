@@ -1,8 +1,8 @@
 """Route Qwen3's RMSNorms and SiLU-and-mul through the fused quantizing kernels.
 
 vLLM 0.28 has the plumbing for this, a pre-quantized activation a linear kernel
-can consume (vllm/model_executor/layers/fusion/quant_activation.py), but only
-FP8 kernels consume one and no model produces one. This patch does both for int8,
+can consume (vllm/model_executor/layers/fusion/quant_activation.py), but the int8
+kernels do not consume one and Qwen3 does not produce one. This patch does both for int8,
 in the process that builds the model (VLLM_ENABLE_V1_MULTIPROCESSING=0):
 
   * the int8 linear kernels (Triton and CUTLASS) accept a PreQuant input and go
