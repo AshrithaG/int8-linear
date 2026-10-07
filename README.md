@@ -304,7 +304,7 @@ Microseconds per decoder layer:
 | 32 | 8,746 | 8,664 | 8,756 | +1.1% | +0.1% | 0.2% |
 | 48 | 11,466 | 11,877 | 12,019 | +1.2% | +4.8% | 0.1% |
 | 64 | 14,659 | 14,655 | 14,774 | +0.8% | +0.8% | 0.1% |
-| 128 | 22,417 | 20,971 | 22,668 | +8.1% | +1.1% | 0.1% |HECK
+| 128 | 22,417 | 20,971 | 22,668 | +8.1% | +1.1% | 0.1% |
 
 At batch 64 it put this kernel 0.2 microseconds per decoder layer ahead of #45126, as served,
 where the per-layer benchmark had said 10.0. It did less well against CUTLASS, putting this
