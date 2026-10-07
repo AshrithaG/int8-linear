@@ -9,6 +9,10 @@ the unquantized model for reference.
     vllm_triton   the same checkpoint, --linear-backend triton, as vLLM ships it
     pr45126       the Triton backend running the kernel and tables from vllm-project/vllm#45126
     ours          the Triton backend running this repo's kernel (int8_linear/vllm_patch.py)
+    cutlass_fused cutlass, with each RMSNorm and SiLU-and-mul quantizing its own output
+                  in one fused kernel instead of a separate scaled_int8_quant
+                  (int8_linear/fused_quant.py, int8_linear/vllm_fuse_patch.py)
+    ours_fused    ours, with the same fusion
 
 pr45126 and ours each sit behind a custom op, so under torch.compile they choose a
 configuration from every call's batch; vllm_triton is traced by torch.compile as
@@ -49,7 +53,7 @@ BF16_MODEL = "Qwen/Qwen3-1.7B"
 # checkpoint's config.json and recipe.yaml at this revision say so.
 W8A8_MODEL = "nytopop/Qwen3-1.7B.w8a8"
 W8A8_REVISION = "cbf1e72c353f3b9ae24487c2dae8877ee53fe002"
-BACKENDS = ("bf16", "cutlass", "vllm_triton", "pr45126", "ours")
+BACKENDS = ("bf16", "cutlass", "vllm_triton", "pr45126", "ours", "cutlass_fused", "ours_fused")
 SAMPLE_PROMPTS = ["The capital of France is", "Explain what a hash table is.", "def fibonacci(n):"]
 WIKITEXT = Path.home() / ".cache" / "int8-linear" / "wikitext-2-raw-v1-test.txt"
 
@@ -77,13 +81,16 @@ def build_llm(backend: str, max_model_len: int, enforce_eager: bool):
                   dtype="bfloat16", enable_prefix_caching=False, enforce_eager=enforce_eager)
     if backend == "bf16":
         return LLM(model=BF16_MODEL, **common)
-    if backend == "ours":
+    if backend in ("ours", "ours_fused"):
         from int8_linear.vllm_patch import patch_vllm
         patch_vllm()
     elif backend == "pr45126":
         from int8_linear.pr45126 import patch_vllm
         patch_vllm()
-    linear_backend = "cutlass" if backend == "cutlass" else "triton"
+    if backend.endswith("_fused"):
+        from int8_linear import vllm_fuse_patch
+        vllm_fuse_patch.patch_vllm()
+    linear_backend = "cutlass" if backend.startswith("cutlass") else "triton"
     return LLM(model=W8A8_MODEL, revision=W8A8_REVISION, linear_backend=linear_backend, **common)
 
 
@@ -301,7 +308,12 @@ def main() -> None:
         res["samples"] = samples(llm)
         save()
         res["perplexity"] = perplexity(llm, args.ppl_windows, args.ppl_window_len)
-    if args.backend == "ours":
+    if args.backend.endswith("_fused"):
+        from int8_linear import fused_quant, vllm_fuse_patch
+        res.update(prequant_calls=vllm_fuse_patch.PREQUANT_CALLS,
+                   fused_numerics={"precise_div": fused_quant.PRECISE_DIV,
+                                   "round_silu": fused_quant.ROUND_SILU})
+    if args.backend in ("ours", "ours_fused"):
         from int8_linear import vllm_patch
         res.update(kernel_calls=vllm_patch.CALLS, fallbacks=vllm_patch.FALLBACKS,
                    configs={f"M={m} {k}x{n}": c for (m, k, n), c in vllm_patch.CONFIGS.items()})
