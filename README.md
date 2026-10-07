@@ -617,7 +617,9 @@ Full tables: `results/fuse.md`. Run it all with `bash tools/run_fuse_vm.sh`.
 - Follow [vllm-project/vllm#56924](https://github.com/vllm-project/vllm/issues/56924), the
   CUTLASS bucket report, and time any patch it leads to on this GPU.
 - Share the Ada measurements alongside [#45126](https://github.com/vllm-project/vllm/pull/45126).
-- Report the int8 fusion gap and the fused CUDA kernel's prefill slowdown to vLLM.
+- Follow [vllm-project/vllm#60499](https://github.com/vllm-project/vllm/issues/60499), the report of
+  the int8 fusion gap and the fused CUDA kernel's prefill slowdown, and time
+  [#60224](https://github.com/vllm-project/vllm/pull/60224) on this GPU.
 
 ## Reproduce
 
