@@ -1,0 +1,329 @@
+{
+ "norm": [
+  {
+   "M": 1,
+   "residual": false,
+   "vllm_fused_cuda": {
+    "int8_diff_share": 0.0024414,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.0
+   },
+   "ours_precise_div=True": {
+    "int8_diff_share": 0.0024414,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.0
+   },
+   "ours_precise_div=False": {
+    "int8_diff_share": 0.0024414,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.0
+   }
+  },
+  {
+   "M": 1,
+   "residual": true,
+   "vllm_fused_cuda": {
+    "int8_diff_share": 0.0068359,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.0,
+    "residual_identical": true
+   },
+   "ours_precise_div=True": {
+    "int8_diff_share": 0.0068359,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.0,
+    "residual_identical": true
+   },
+   "ours_precise_div=False": {
+    "int8_diff_share": 0.0068359,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.0,
+    "residual_identical": true
+   }
+  },
+  {
+   "M": 7,
+   "residual": false,
+   "vllm_fused_cuda": {
+    "int8_diff_share": 0.0034877,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.0
+   },
+   "ours_precise_div=True": {
+    "int8_diff_share": 0.0034877,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.0
+   },
+   "ours_precise_div=False": {
+    "int8_diff_share": 0.0034877,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 8.651188210251348e-08
+   }
+  },
+  {
+   "M": 7,
+   "residual": true,
+   "vllm_fused_cuda": {
+    "int8_diff_share": 0.0113002,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.007633584085851908,
+    "residual_identical": true
+   },
+   "ours_precise_div=True": {
+    "int8_diff_share": 0.0113002,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.007633584085851908,
+    "residual_identical": true
+   },
+   "ours_precise_div=False": {
+    "int8_diff_share": 0.0113002,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.007633584085851908,
+    "residual_identical": true
+   }
+  },
+  {
+   "M": 64,
+   "residual": false,
+   "vllm_fused_cuda": {
+    "int8_diff_share": 0.0055237,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.007299266755580902
+   },
+   "ours_precise_div=True": {
+    "int8_diff_share": 0.0055237,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.007299266755580902
+   },
+   "ours_precise_div=False": {
+    "int8_diff_share": 0.0055237,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.007299266755580902
+   }
+  },
+  {
+   "M": 64,
+   "residual": true,
+   "vllm_fused_cuda": {
+    "int8_diff_share": 0.0105362,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.007462683133780956,
+    "residual_identical": true
+   },
+   "ours_precise_div=True": {
+    "int8_diff_share": 0.0105362,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.007462683133780956,
+    "residual_identical": true
+   },
+   "ours_precise_div=False": {
+    "int8_diff_share": 0.0105362,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.007462683133780956,
+    "residual_identical": true
+   }
+  },
+  {
+   "M": 333,
+   "residual": false,
+   "vllm_fused_cuda": {
+    "int8_diff_share": 0.0055705,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.0078124962747097015
+   },
+   "ours_precise_div=True": {
+    "int8_diff_share": 0.0055632,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.0078124962747097015
+   },
+   "ours_precise_div=False": {
+    "int8_diff_share": 0.0055676,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.0078124962747097015
+   }
+  },
+  {
+   "M": 333,
+   "residual": true,
+   "vllm_fused_cuda": {
+    "int8_diff_share": 0.009097,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.007692303974181414,
+    "residual_identical": true
+   },
+   "ours_precise_div=True": {
+    "int8_diff_share": 0.0090926,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.007692303974181414,
+    "residual_identical": true
+   },
+   "ours_precise_div=False": {
+    "int8_diff_share": 0.009097,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.007692303974181414,
+    "residual_identical": true
+   }
+  },
+  {
+   "M": 2048,
+   "residual": false,
+   "vllm_fused_cuda": {
+    "int8_diff_share": 0.0054822,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.0078124962747097015
+   },
+   "ours_precise_div=True": {
+    "int8_diff_share": 0.0054803,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.0078124962747097015
+   },
+   "ours_precise_div=False": {
+    "int8_diff_share": 0.0054815,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.0078124962747097015
+   }
+  },
+  {
+   "M": 2048,
+   "residual": true,
+   "vllm_fused_cuda": {
+    "int8_diff_share": 0.0086482,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.0078124962747097015,
+    "residual_identical": true
+   },
+   "ours_precise_div=True": {
+    "int8_diff_share": 0.0086462,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.0078124962747097015,
+    "residual_identical": true
+   },
+   "ours_precise_div=False": {
+    "int8_diff_share": 0.0086477,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.0078124962747097015,
+    "residual_identical": true
+   }
+  }
+ ],
+ "silu": [
+  {
+   "M": 1,
+   "ours_precise_div=True_round_silu=True": {
+    "int8_diff_share": 0.0,
+    "int8_max_diff": 0,
+    "scale_max_rel_diff": 0.0
+   },
+   "ours_precise_div=True_round_silu=False": {
+    "int8_diff_share": 0.0008138,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.0
+   },
+   "ours_precise_div=False_round_silu=True": {
+    "int8_diff_share": 0.0,
+    "int8_max_diff": 0,
+    "scale_max_rel_diff": 0.0
+   },
+   "ours_precise_div=False_round_silu=False": {
+    "int8_diff_share": 0.0008138,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.0
+   }
+  },
+  {
+   "M": 7,
+   "ours_precise_div=True_round_silu=True": {
+    "int8_diff_share": 0.0,
+    "int8_max_diff": 0,
+    "scale_max_rel_diff": 0.0
+   },
+   "ours_precise_div=True_round_silu=False": {
+    "int8_diff_share": 0.0033715,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.004504502285271883
+   },
+   "ours_precise_div=False_round_silu=True": {
+    "int8_diff_share": 0.0,
+    "int8_max_diff": 0,
+    "scale_max_rel_diff": 8.651188210251348e-08
+   },
+   "ours_precise_div=False_round_silu=False": {
+    "int8_diff_share": 0.0033715,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.004504502285271883
+   }
+  },
+  {
+   "M": 64,
+   "ours_precise_div=True_round_silu=True": {
+    "int8_diff_share": 0.0,
+    "int8_max_diff": 0,
+    "scale_max_rel_diff": 0.0
+   },
+   "ours_precise_div=True_round_silu=False": {
+    "int8_diff_share": 0.0043055,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.007407404016703367
+   },
+   "ours_precise_div=False_round_silu=True": {
+    "int8_diff_share": 2.5e-06,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 1.0587118026705866e-07
+   },
+   "ours_precise_div=False_round_silu=False": {
+    "int8_diff_share": 0.0043055,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.007407404016703367
+   }
+  },
+  {
+   "M": 333,
+   "ours_precise_div=True_round_silu=True": {
+    "int8_diff_share": 0.0,
+    "int8_max_diff": 0,
+    "scale_max_rel_diff": 0.0
+   },
+   "ours_precise_div=True_round_silu=False": {
+    "int8_diff_share": 0.0041433,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.007692303974181414
+   },
+   "ours_precise_div=False_round_silu=True": {
+    "int8_diff_share": 5e-07,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 1.0587118026705866e-07
+   },
+   "ours_precise_div=False_round_silu=False": {
+    "int8_diff_share": 0.0041448,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 0.007692303974181414
+   }
+  },
+  {
+   "M": 2048,
+   "ours_precise_div=True_round_silu=True": {
+    "int8_diff_share": 0.0,
+    "int8_max_diff": 0,
+    "scale_max_rel_diff": 0.0
+   },
+   "ours_precise_div=True_round_silu=False": {
+    "int8_diff_share": 0.0041696,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.0078124962747097015
+   },
+   "ours_precise_div=False_round_silu=True": {
+    "int8_diff_share": 8e-07,
+    "int8_max_diff": 1,
+    "scale_max_rel_diff": 1.0587118026705866e-07
+   },
+   "ours_precise_div=False_round_silu=False": {
+    "int8_diff_share": 0.0041699,
+    "int8_max_diff": 2,
+    "scale_max_rel_diff": 0.0078124962747097015
+   }
+  }
+ ],
+ "best_precise_div": true,
+ "best_round_silu": true,
+ "device": "NVIDIA GeForce RTX 4090"
+}

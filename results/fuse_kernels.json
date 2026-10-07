@@ -1,0 +1,79 @@
+{
+ "device": "NVIDIA GeForce RTX 4090",
+ "precise_div": true,
+ "round_silu": true,
+ "rows": [
+  {
+   "M": 1,
+   "norm_unfused_us": 2.9,
+   "norm_vllm_fused_cuda_us": 2.23,
+   "norm_ours_us": 1.66,
+   "silu_unfused_us": 3.51,
+   "silu_ours_us": 2.4
+  },
+  {
+   "M": 4,
+   "norm_unfused_us": 2.88,
+   "norm_vllm_fused_cuda_us": 2.24,
+   "norm_ours_us": 1.65,
+   "silu_unfused_us": 3.5,
+   "silu_ours_us": 2.39
+  },
+  {
+   "M": 16,
+   "norm_unfused_us": 2.95,
+   "norm_vllm_fused_cuda_us": 2.26,
+   "norm_ours_us": 1.7,
+   "silu_unfused_us": 3.55,
+   "silu_ours_us": 2.47
+  },
+  {
+   "M": 32,
+   "norm_unfused_us": 3.02,
+   "norm_vllm_fused_cuda_us": 2.31,
+   "norm_ours_us": 1.76,
+   "silu_unfused_us": 3.67,
+   "silu_ours_us": 2.51
+  },
+  {
+   "M": 48,
+   "norm_unfused_us": 3.13,
+   "norm_vllm_fused_cuda_us": 2.39,
+   "norm_ours_us": 1.82,
+   "silu_unfused_us": 3.85,
+   "silu_ours_us": 2.58
+  },
+  {
+   "M": 64,
+   "norm_unfused_us": 3.21,
+   "norm_vllm_fused_cuda_us": 2.46,
+   "norm_ours_us": 1.91,
+   "silu_unfused_us": 3.9,
+   "silu_ours_us": 2.63
+  },
+  {
+   "M": 128,
+   "norm_unfused_us": 3.56,
+   "norm_vllm_fused_cuda_us": 2.71,
+   "norm_ours_us": 2.18,
+   "silu_unfused_us": 4.45,
+   "silu_ours_us": 2.8
+  },
+  {
+   "M": 1024,
+   "norm_unfused_us": 8.79,
+   "norm_vllm_fused_cuda_us": 14.09,
+   "norm_ours_us": 5.59,
+   "silu_unfused_us": 15.33,
+   "silu_ours_us": 10.17
+  },
+  {
+   "M": 4096,
+   "norm_unfused_us": 24.59,
+   "norm_vllm_fused_cuda_us": 48.58,
+   "norm_ours_us": 13.88,
+   "silu_unfused_us": 211.76,
+   "silu_ours_us": 136.98
+  }
+ ]
+}

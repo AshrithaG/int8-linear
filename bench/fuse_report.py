@@ -4,6 +4,7 @@ stand-in's prediction against what serving measured, and quality."""
 from __future__ import annotations
 
 import json
+import math
 import statistics
 import sys
 from pathlib import Path
@@ -81,6 +82,37 @@ def main() -> None:
         out.append(row([f"{base} -> {fused}", f"{100 * (p1 / p0 - 1):+.1f}%", f"{ppl(a[0])} / {ppl(f[0])}",
                         "n/a" if gap is None else f"{gap[0]:.2e} / {gap[1]:.2e}", same,
                         str(f[0].get("prequant_calls", "n/a"))]))
+    # Quality as paired differences: mean log-probability per WikiText window, fused minus
+    # reference, with the standard error over windows. For scale, the same statistic for two
+    # runs of unchanged CUTLASS a month apart (driver update in between) and int8 vs bf16.
+    def paired(a, b):
+        wa = [statistics.mean(w) for w in a["perplexity"]["token_logprobs"]]
+        wb = [statistics.mean(w) for w in b["perplexity"]["token_logprobs"]]
+        d = [x - y for x, y in zip(wa, wb)]
+        m, se = statistics.mean(d), statistics.stdev(d) / math.sqrt(len(d))
+        return f"{m:+.4f} (SE {se:.4f}, z {m / se:+.2f})"
+
+    def pub(b):
+        p = RESULTS / f"e2e_{b}.json"
+        return json.loads(p.read_text()) if p.exists() else None
+
+    rows = [("cutlass_fused - cutlass", runs("cutlass_fused"), runs("cutlass")),
+            ("ours_fused - ours", runs("ours_fused"), runs("ours"))]
+    bf16 = pub("bf16")
+    out += ["", "Paired quality, mean log-probability per token over 40 WikiText-2 windows "
+            "(positive: the first assigns the text higher probability):", "",
+            "| comparison | difference |", "|---|---|"]
+    for label, a, b in rows:
+        if a and b:
+            out.append(row([label, paired(a[0], b[0])]))
+    if bf16:
+        for label, a in (("cutlass_fused - bf16", runs("cutlass_fused")), ("ours_fused - bf16", runs("ours_fused")),
+                         ("cutlass - bf16", runs("cutlass")), ("ours - bf16", runs("ours"))):
+            if a:
+                out.append(row([label, paired(a[0], bf16)]))
+    if pub("cutlass") and runs("cutlass"):
+        out.append(row(["cutlass today - cutlass in the earlier published run (no code change)",
+                        paired(runs("cutlass")[0], pub("cutlass"))]))
     (RESULTS / "fuse.md").write_text("\n".join(out) + "\n")
     print("\n".join(out))
 

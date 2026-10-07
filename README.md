@@ -34,6 +34,13 @@ tune in.
   1.31x to 1.99x from M=16 to M=17 on five of six layer shapes, where vLLM's source
   switches CUTLASS configuration. The sixth, which gets a different configuration in
   that bucket, steps 1.06x. Both were predicted before the sweep ran.
+- **Fusing the activation quantizer into the kernel before it adds 2.6% to 4.2% decode
+  and 10.1% prefill.** vLLM fuses RMSNorm with the quantizer for FP8 models but not for
+  int8 ones. Two Triton kernels, add+RMSNorm+quantize and SiLU-and-mul+quantize, wired
+  into the served model, raise decode 2.6% to 4.2% with this kernel and 1.2% to 2.2% with
+  CUTLASS; a stand-in, written down first, predicted 2.8% to 3.2%. Prefill rises 10.1% and
+  6.8%. vLLM's own fused CUDA kernel is slower than the two unfused kernels from 1,024
+  tokens up (48.6 against 24.6 microseconds at 4,096).
 - **Where it loses.** Without CUDA graphs, decode is 0.85x to 0.90x CUTLASS and 0.73x to
   0.77x bf16 across runs. Inside the served model its matmul call costs 45.6 microseconds
   of host time against CUTLASS's 29.5, three times the gap measured alone, and that is
@@ -479,6 +486,84 @@ vLLM's own Triton kernel is a median 0.93x of CUTLASS on the Qwen3-1.7B shapes. 
 | 1024 | 159.4 | 55.7 | 59.9 | 47.2 | 1.18x |
 | 4096 | 608.0 | 210.7 | 234.1 | 173.5 | 1.21x |
 
+## Fusing the activation quantizer into the kernel before it
+
+Every int8 linear layer quantizes its input per token right before the matmul. In vLLM
+0.28 that is a kernel of its own, `dynamic_scaled_int8_quant`, launched after the RMSNorm
+or SiLU-and-mul that produced the input: one more launch, and one more write and read of
+the activation. vLLM fuses this pair for FP8 models, but its RMSNorm-quant compile pass
+only matches FP8 quantizers, so int8 models run both kernels even though vLLM's own fused
+CUDA kernel, `rms_norm_dynamic_per_token_quant`, accepts int8 output. vLLM's main branch
+is the same; [vllm-project/vllm#38026](https://github.com/vllm-project/vllm/pull/38026)
+tried int8 by another route and was closed unmerged.
+
+`int8_linear/fused_quant.py` has two Triton kernels, add+RMSNorm+quantize and
+SiLU-and-mul+quantize, one program per token row, that follow vLLM's arithmetic step by
+step. `int8_linear/vllm_fuse_patch.py` lets vLLM's int8 kernels (Triton and CUTLASS) take
+a pre-quantized activation and routes Qwen3's decoder layer through the fused kernels,
+for 3 of each layer's 4 matmuls (o_proj still quantizes attention's output itself): 84
+matmuls per forward pass.
+
+**Numerics.** The SiLU-and-mul kernel's int8 output is bit-identical to vLLM's
+`silu_and_mul` followed by `dynamic_scaled_int8_quant`. The RMSNorm kernel differs from
+vLLM's unfused pair on 0.2% to 1.1% of int8 values, by at most two steps, which is the
+same share vLLM's own fused CUDA kernel differs by, at every size measured; the residual
+stream is bit-identical. `bench/fuse_quant.py` picked the matching division and SiLU
+rounding before anything was timed.
+
+**Kernel time,** microseconds per call, as CUDA-graph replays of 100 calls:
+
+| tokens | RMSNorm + quantize: vLLM, two kernels | vLLM's fused CUDA kernel | this repo | SiLU-and-mul + quantize: vLLM, two kernels | this repo |
+|---|---|---|---|---|---|
+| 1 | 2.90 | 2.23 | **1.66** | 3.51 | **2.40** |
+| 64 | 3.21 | 2.46 | **1.91** | 3.90 | **2.63** |
+| 128 | 3.56 | 2.71 | **2.18** | 4.45 | **2.80** |
+| 1,024 | 8.79 | 14.09 | **5.59** | 15.33 | **10.17** |
+| 4,096 | 24.59 | 48.58 | **13.88** | 211.76 | **136.98** |
+
+vLLM's fused CUDA kernel is faster than its two unfused kernels at decode sizes and slower
+from 1,024 tokens up.
+
+**Served,** with a prediction written down first. The 28-layer stand-in, rebuilt to match
+the served path (vLLM's fused add-RMSNorm, quantizer and SiLU-and-mul, this repo's matmul),
+saved 3.4 to 5.6 microseconds per decoder layer, which applied to the last run's decode
+step predicted 2.8% to 3.2% more tokens per second. Then each backend was served twice,
+alternating, with and without the fusion (medians of the two rounds, which agreed within
+0.55% on decode and 0.71% on prefill, with identical logprobs):
+
+| batch | predicted | CUTLASS: unfused -> fused | this repo: unfused -> fused |
+|---|---|---|---|
+| 1 | +3.2% | 312 -> 318 (+1.8%) | 325 -> 337 (+3.5%) |
+| 4 | +3.2% | 1,201 -> 1,226 (+2.1%) | 1,254 -> 1,302 (+3.8%) |
+| 16 | +3.1% | 4,459 -> 4,558 (+2.2%) | 4,670 -> 4,865 (+4.2%) |
+| 32 | +2.8% | 7,692 -> 7,782 (+1.2%) | 8,752 -> 9,063 (+3.5%) |
+| 48 | +2.9% | 10,357 -> 10,531 (+1.7%) | 12,028 -> 12,385 (+3.0%) |
+| 64 | +3.1% | 12,901 -> 13,122 (+1.7%) | 14,794 -> 15,201 (+2.8%) |
+| 128 | +2.9% | 19,120 -> 19,449 (+1.7%) | 22,652 -> 23,231 (+2.6%) |
+
+Prefill, 8 prompts of 512 tokens: +6.8% with CUTLASS and +10.1% with this kernel.
+
+**Quality.** The fused runs do not reproduce the unfused runs' logprobs token for token:
+with per-token int8 quantization, a one-step difference in a few values moves later
+layers, and the per-token logprob gap is 0.19 on average. The same happened to CUTLASS by
+itself between the earlier published run and this one, with no code change (a driver
+update came in between): its per-token gap is 0.14 and its perplexity moved from 20.49 to
+20.58. Over the 40 WikiText-2 windows, as paired differences in mean logprob per token:
+
+| comparison | difference |
+|---|---|
+| fused minus unfused, CUTLASS | +0.0072 (SE 0.0025) |
+| fused minus unfused, this kernel | +0.0057 (SE 0.0029) |
+| fused minus bf16, CUTLASS | +0.0005 (SE 0.0036) |
+| fused minus bf16, this kernel | +0.0019 (SE 0.0034) |
+| CUTLASS today minus CUTLASS in the earlier run, no code change | -0.0046 (SE 0.0018) |
+
+The fused models are indistinguishable from bf16. They score slightly better than their
+unfused counterparts, by about as much as unfused CUTLASS moved between two runs on its
+own, so I read that as numerical reshuffling rather than a quality gain.
+
+Full tables: `results/fuse.md`. Run it all with `bash tools/run_fuse_vm.sh`.
+
 ## Where it loses
 
 - **Without CUDA graphs.** End to end, decode is 0.85x to 0.90x CUTLASS and 0.73x to 0.77x
@@ -532,6 +617,7 @@ vLLM's own Triton kernel is a median 0.93x of CUTLASS on the Qwen3-1.7B shapes. 
 - Follow [vllm-project/vllm#56924](https://github.com/vllm-project/vllm/issues/56924), the
   CUTLASS bucket report, and time any patch it leads to on this GPU.
 - Share the Ada measurements alongside [#45126](https://github.com/vllm-project/vllm/pull/45126).
+- Report the int8 fusion gap and the fused CUDA kernel's prefill slowdown to vLLM.
 
 ## Reproduce
 
@@ -544,6 +630,7 @@ python bench/bench_linear.py --tag confirm   # stored configurations, no tuning
 bash tools/run_e2e_vm.sh          # tuning at vLLM's batch sizes, dispatch sweep, launch cost, end to end, #45126 and Llama per layer
 python tools/cutlass_bucket_repro.py         # the CUTLASS step with only torch and vLLM
 python bench/situ_tune.py                    # stand-in check, then tuning in it
+bash tools/run_fuse_vm.sh         # fused quantizer: numerics, kernel times, prediction, end to end
 ```
 
 ## License
